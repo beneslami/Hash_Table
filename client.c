@@ -4,7 +4,7 @@
 extern int create_and_write_shared_memory(char *mmap_key, char *value, unsigned int size);
 
 int main(int argc, char **argv){
-  char *key = "/test2";
+  char *key = "/test";
   char content[64];
   int select, i;
 
