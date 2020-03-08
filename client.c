@@ -1,36 +1,131 @@
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <signal.h>
 
-extern int create_and_write_shared_memory(char *mmap_key, char *value, unsigned int size);
+#include "DLL/dll.h"
+#include "data-List/data-list.h"
+#include "Hash-Table/hash-table.h"
+#include "Sync/sync.h"
 
-int main(int argc, char **argv){
-  char *key = "/test";
-  char content[64];
-  int select, i;
+int data_socket;
+int loop = 1; // indicates if server is still up and running
+int disconnect = 1; // indicates to server that client wants to disconnect
 
-  printf("Select one of the items:\n");
-  printf("1) add item\n");
-  printf("2) delete item\n");
-  printf("3) show table\n");
-  scanf("%d", &select);
+/* Client's copies of network data structures */
+dll_t *hash_table;
+dll_t *data_list;
 
-  if(select == 1){
-    char temp[32];
-    printf("enter your data item to add\n");
-    scanf("%s", temp);
-    sprintf(content, "%d%s", select, temp);
-    create_and_write_shared_memory(key, content, strlen(content));
-  }
+/* Break out of main infinite loop and inform server of intent to disconnect. */
+void signal_handler(int signal_num) {
+    if (signal_num == SIGINT) {
+        loop = 0;
+        write(data_socket, &disconnect, sizeof(int));
+        close(data_socket);
+        deinit_dll(hash_table);
+        deinit_dll(data_list);
+        exit(0);
+    }
+    else if (signal_num == SIGUSR1) {
+        deinit_dll(hash_table);
+        deinit_dll(data_list);
 
-  else if (select == 2){
-    char temp[32];
-    printf("enter your data item to delete\n");
-    scanf("%s", temp);
-    sprintf(content, "%d%s", select, temp);
-    create_and_write_shared_memory(key, content, strlen(content));
-  }
-  else if (select == 3){
-    sprintf(content, "%d", select);
-  }
-  return 0;
+        hash_table = init_dll();
+        data_list = init_dll();
+    }
+}
+
+/* Optionally, display contents of a data stucture (hash table or data list). */
+void display_ds(int synchronized) {
+    char c, flush;
+    switch (synchronized) {
+        case HASH_LIST:
+            printf("Hash table is up to date. Would you like to see it?(y/n)\n");
+            c = getchar();
+            scanf("%c", &flush);
+            if (c == 'y') {
+                display_hash_table(hash_table);
+            }
+            break;
+        case DATA_LIST:
+            printf("Data list is up to date. Would you like to see it?(y/n)\n");
+            c = getchar();
+            scanf("%c", &flush);
+            if (c == 'y') {
+                display_data_list(data_list);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+int main() {
+    struct sockaddr_un addr;
+
+    hash_table = init_dll();
+    data_list = init_dll();
+
+    data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (data_socket == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, SOCKET_NAME, sizeof(addr.sun_path) - 1);
+
+    if (connect(data_socket, (const struct sockaddr *) &addr,
+                sizeof(struct sockaddr_un)) == -1) {
+        fprintf(stderr, "The server is down.\n");
+        exit(1);
+    }
+
+    pid_t pid = getpid();
+    write(data_socket, &pid, sizeof(pid_t)); // send server client's process id
+
+    signal(SIGINT, signal_handler);  //register signal handler
+    signal(SIGUSR1, signal_handler);
+    /* Continously wait for updates to routing table and MAC list from the server regarding table contents and server state. */
+    while (loop) {
+        int synchronized;
+        char hash[HASH_LEN];
+        sync_msg_t *sync_msg = calloc(1, sizeof(sync_msg_t));
+        memset(hash, 0, HASH_LEN);
+
+        if (read(data_socket, sync_msg, sizeof(sync_msg_t)) == -1) {
+            perror("read");
+            break;
+        }
+
+        if (read(data_socket, &synchronized, sizeof(int)) == -1) {
+            perror("read");
+            break;
+        }
+
+        if (read(data_socket, &loop, sizeof(int)) == -1) {
+            perror("read");
+            break;
+        }
+
+        if (sync_msg->l_code == HASH_L) {
+            process_sync_mesg(hash_table, sync_msg);
+        }
+        else {
+            process_sync_mesg(data_list, sync_msg);
+        }
+
+        display_ds(synchronized);
+    }
+
+    exit(0);
 }
