@@ -20,7 +20,7 @@ typedef enum {
     NONE  // indicates that all current updates from server have been processed
 } OPCODE;
 
-/* Specifies whether we're dealing with L3 (IP routing table) or L2 (MAC address list) */
+/* Specifies whether we're dealing with hash table or data list */
 typedef enum {
     HASH_L,
     DATA_L
