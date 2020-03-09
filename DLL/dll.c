@@ -26,7 +26,7 @@ void append(dll_t *dll, void *data) {
     dll->tail->next = node;
     dll->tail = node;
     if (dll->head != head) {
-        printf("Fuck something's wrong...\n");
+        printf("something's wrong with dll circulation...\n");
     }
 }
 
