@@ -135,9 +135,6 @@ int create_sync_message(char *operation, sync_msg_t *sync_msg, int silent) {
             case 'C':
                 sync_msg->op_code = CREATE;
                 break;
-            case 'U':
-                sync_msg->op_code = UPDATE;
-                break;
             case 'D':
                 sync_msg->op_code = DELETE;
                 break;
@@ -295,10 +292,9 @@ int main() {
 
         printf("Please select from the following options:\n");
         printf("1)CREATE <Data>\n");
-        printf("2)UPDATE <Data>\n");
-        printf("3)DELETE <Data>\n");
-        printf("4)SHOW TABLE\n");
-        printf("5)FLUSH TABLE\n");
+        printf("2)DELETE <Data>\n");
+        printf("3)SHOW TABLE\n");
+        printf("4)FLUSH TABLE\n");
 
         select(get_max_fd() + 1, &readfds, NULL, NULL, NULL);  /* Wait for incoming connections. */
 

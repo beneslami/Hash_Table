@@ -95,7 +95,7 @@ int main() {
 
     signal(SIGINT, signal_handler);  //register signal handler
     signal(SIGUSR1, signal_handler);
-    /* Continously wait for updates to routing table and MAC list from the server regarding table contents and server state. */
+    /* Continously wait for updates to hash table and data list from the server regarding table contents and server state. */
     while (loop) {
         int synchronized;
         char hash[HASH_LEN];
