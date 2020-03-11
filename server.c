@@ -12,12 +12,12 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <signal.h>
-
+#include <semaphore.h>
 #include "DLL/dll.h"
 #include "data-List/data-list.h"
 #include "Hash-Table/hash-table.h"
 #include "Sync/sync.h"
-
+#define SEM_MUTEX_NAME "/sem-mutex"
 #define MAX_CLIENTS 32
 #define OP_LEN 128
 
@@ -243,6 +243,7 @@ int main() {
 
     hash_table = init_dll();
     data_list = init_dll();
+    sem_init(sem_access, 1, 1);
 
     intitiaze_monitor_fd_and_client_pid_set();
     add_to_monitored_fd_set(0);

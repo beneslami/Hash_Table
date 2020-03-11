@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <semaphore.h>
 
 #include "Hash-Table/hash-table.h"
 
@@ -57,8 +58,8 @@ int get_hash(const char *data, char *hash) {
         printf("Mapping failed\n");
         return -1;
     }
-
     memcpy(hash, shm_reg, HASH_LEN);
+  
     if (munmap(shm_reg, HASH_LEN) == -1) {
         printf("Unmapping failed\n");
         return -1;
