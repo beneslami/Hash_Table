@@ -1,6 +1,4 @@
-#include "sync.h"
 #include <stdio.h>
+#include "sync.h"
 
-int create_sync_msg(){
-	return 0;
-}
+//process_sync_msg();

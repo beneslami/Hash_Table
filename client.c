@@ -29,6 +29,7 @@ int main(void){
     table_t *table;
     table = init(); // create table
     OPCODE op_code;
+    char sync_msg[6];
 	struct sockaddr_un addr;// create socket
 
 	data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -48,15 +49,26 @@ int main(void){
     write(data_socket, &pid, sizeof(pid_t)); // send server client's process id
     signal(SIGINT, signal_handler);  //register signal handler
     signal(SIGUSR1, signal_handler);
+    int rc;
+    char *ch;
+
     while(loop){
-        if(read(data_socket, &loop, sizeof(int)) == -1){
+        
+        rc = read(data_socket, sync_msg, strlen(sync_msg));
+        if(rc == -1){
             perror("read");
             break;
         }
-        printf("server wants me to disconnect\n");
-        printf("%d", loop);
-        break;
+        sync_msg[rc] = '\0';
+        printf("%s\n", sync_msg);
         
+        /*rc = read(data_socket, ch, sizeof(char)); 
+        if(rc == -1){
+            perror("read");
+            break;
+        }
+        loop = atoi(ch);
+        printf("%s->\n", ch);*/
     }
     close(data_socket);
 	return 0;

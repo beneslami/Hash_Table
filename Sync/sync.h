@@ -9,6 +9,6 @@ typedef enum {
     FLUSH
 }OPCODE;
 
-int create_sync_msg();
+//int process_sync_msg();
 
 #endif

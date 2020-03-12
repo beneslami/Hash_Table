@@ -16,8 +16,11 @@
 #define MAX_CLIENTS 32
 #define OP_LEN 128
 
+int create_sync_message(char*, char*);
 int monitored_fd_set[MAX_CLIENTS];
 pid_t client_pid_set[MAX_CLIENTS];
+table_t *table;
+
 
 void intitiaze_monitor_fd_and_client_pid_set(int size){
     int i = 0;
@@ -105,10 +108,55 @@ void signal_handler(int signal_num){
     }
 }
 
+int create_sync_message(char *operation, char *sync_msg){
+    char code[6], data[32];
+    sscanf(operation, "%s %s", code, data);
+    OPCODE op_code;
+    if(!strcmp(code, "ADD"))
+        op_code = ADD;
+    else if(!strcmp(code, "DELETE"))
+        op_code = DELETE;
+    else if(!strcmp(code, "FIND"))
+        op_code = FIND;
+    else if(!strcmp(code, "SHOW"))
+        op_code = SHOW;
+    else if(!strcmp(code, "FLUSH"))
+        op_code = FLUSH;
+    else{
+        printf("invalid opcode\n");
+        return -1;
+    }
+    switch(op_code){
+        case ADD:
+            strcpy(sync_msg, "ADD");
+            //insert data to the shared memory
+        break;
+        case DELETE:
+            strcpy(sync_msg, "DELETE");
+            //insert data to the shared memory
+        break;
+        case FIND:
+            strcpy(sync_msg, "FIND");
+        break;
+        case SHOW:
+            strcpy(sync_msg, "NONE");
+            show(table);
+        break;
+        case FLUSH:
+            strcpy(sync_msg, "FLUSH");
+            flush(table);
+        break;
+        default:
+        break;
+    }
+    return 0;
+}
+
 int main(void){
 	
+    char loop = '1';
+    char sync_msg[6];
     fd_set readfds;
-    table_t *table;
     table = init(); // create hash table
 
     intitiaze_monitor_fd_and_client_pid_set(MAX_CLIENTS);
@@ -142,13 +190,18 @@ int main(void){
 
     while(1){
         char op[OP_LEN];
-
         refresh_fd_set(&readfds, MAX_CLIENTS); /*Copy the entire monitored FDs to readfds*/
-    	
+    	printf("Enter operation\n");
+        printf("1) ADD <DATA>\n");
+        printf("2) DELETE <DATA>\n");
+        printf("3) FIND <DATA>\n");
+        printf("4) SHOW\n");
+        printf("5) FLUSH\n");
+
         select(get_max_fd(MAX_CLIENTS) + 1, &readfds, NULL, NULL, NULL);  /* Wait for incoming connections. */
 	
-		/* New connection: send entire table states to newly connected client. */
-        if(FD_ISSET(connection_socket, &readfds)){
+		
+        if(FD_ISSET(connection_socket, &readfds)){    /* New connection */
             data_socket = accept(connection_socket, NULL, NULL);
             if (data_socket == -1) {
                 perror("accept");
@@ -160,28 +213,37 @@ int main(void){
                 perror("read");
                 exit(1);
             }
-            printf("%d\n", pid);
+            
             add_to_monitored_fd_set(data_socket, MAX_CLIENTS);
             add_to_client_pid_set(pid, MAX_CLIENTS);
 
-            // update new client 
+            // update new client
+            //update_new_client(); 
         }
-        else if(FD_ISSET(0, &readfds)){
+        else if(FD_ISSET(0, &readfds)){  /* read from console */
             ret = read(0, op, OP_LEN - 1);
+            op[ret] = '\0';
 
-            op[strcspn(op, "\r\n")] = 0; 
-            if (ret == -1) {
-                perror("read");
-                return 1;
+            if(ret < 0){
+                printf("Insert valid operation\n");
+                break;
             }
-            op[ret] = 0;
-
-            // create sync message
+            create_sync_message(op, sync_msg);
+            
+            int i, comm_socket_fd;
+            for (i = 2; i < MAX_CLIENTS; i++) { // start at 2 since 0 for server's console and 1 for connection_socket
+                comm_socket_fd = monitored_fd_set[i];
+                if (comm_socket_fd != -1) {
+                    write(comm_socket_fd, sync_msg, sizeof(sync_msg));
+                    //write(comm_socket_fd, &loop, sizeof(char));
+                }
+            }
+            system("clear");
         }
-        else{
+        else{      /* Notify existing clients of changes */
             int i;
             for(i = 2; i < MAX_CLIENTS; i++){
-                if(FD_ISSET(monitored_fd_set[i], &readfds)){
+                if(FD_ISSET(monitored_fd_set[i], &readfds)){   
                     int done;
                     int comm_socket_fd = monitored_fd_set[i];
 
