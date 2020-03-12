@@ -1,33 +1,17 @@
 CC = gcc
+DEPSRC = sync/sync.c linkedlist/linkedlist.c
 CFLAGS = -Wall -Wextra
-DEPSRC = DLL/dll.c data-List/data-list.c Hash-Table/hash-table.c Sync/sync.c
 
-.PHONY: dll data-list hash-table sync shm_ip
+TARGET: server client
 
-default: dll data-list hash-table sync shm_ip
-	$(CC) $(CFLAGS) client.c shm_ip.c $(DEPSRC) -o client
-	$(CC) $(CFLAGS) server.c shm_ip.c $(DEPSRC) -o server
+client: client.c $(DEPSRC)
+	$(CC) client.c $(DEPSRC) -o client
 
-client: dll data-list hash-table sync shm_ip
-	$(CC) $(CFLAGS) client.c shm_ip.c $(DEPSRC) -o client
+server: server.c $(DEPSRC)
+	$(CC) server.c $(DEPSRC) -o server 
 
-server: dll data-list hash-table sync shm_ip
-	$(CC) $(CFLAGS) server.c shm_ip.c $(DEPSRC) -o server
-
-dll:
-	$(CC) $(CFLAGS) -c DLL/dll.c -o DLL/dll.o
-
-data-list: dll shm_ip
-	$(CC) $(CFLAGS) -c data-List/data-list.c -o data-List/data-list.o
-
-hash-table: dll
-	$(CC) $(CFLAGS) -c Hash-Table/hash-table.c -o  Hash-Table/hash-table.o
-
-sync: dll data-list hash-table shm_ip
-	$(CC) $(CFLAGS) -c Sync/sync.c -o Sync/sync.o
-
-shm_ip:
-	$(CC) $(CFLAGS) -c shm_ip.c -o shm_ip.o
+#shm_demo.o: shm_demo.c
+#	$(CC) shm_demo.c 
 
 clean:
-	rm -f client server DLL/dll.o data-List/data-list.o Hash-Table/hash-table.o shm_ip.o Sync/sync.o
+	rm -rf client server socket
