@@ -29,7 +29,7 @@ int main(void){
     table_t *table;
     table = init(); // create table
     OPCODE op_code;
-    char sync_msg[6];
+    char sync_msg[10];
 	struct sockaddr_un addr;// create socket
 
 	data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -50,26 +50,21 @@ int main(void){
     signal(SIGINT, signal_handler);  //register signal handler
     signal(SIGUSR1, signal_handler);
     int rc;
-    char *ch;
+    char ch[32];
 
     while(loop){
-        
-        rc = read(data_socket, sync_msg, strlen(sync_msg));
-        if(rc == -1){
+        rc = read(data_socket, ch, sizeof(ch));
+        if(rc < 0){
             perror("read");
             break;
         }
-        sync_msg[rc] = '\0';
-        printf("%s\n", sync_msg);
-        
-        /*rc = read(data_socket, ch, sizeof(char)); 
-        if(rc == -1){
-            perror("read");
-            break;
-        }
-        loop = atoi(ch);
-        printf("%s->\n", ch);*/
+        ch[rc] = '\0';
+        printf("%s\n", ch);
+        sscanf(ch, "%d %s", &loop, sync_msg);
+        printf("%s\t%d\n", sync_msg, loop);
     }
+
+    free(sync_msg);
     close(data_socket);
 	return 0;
 }
