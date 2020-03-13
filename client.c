@@ -59,9 +59,9 @@ int main(void){
             break;
         }
         ch[rc] = '\0';
-        printf("%s\n", ch);
         sscanf(ch, "%d %s", &loop, sync_msg);
-        printf("%s\t%d\n", sync_msg, loop);
+  
+        process_sync_msg(table, sync_msg); // -->sync.c     TODO
     }
 
     free(sync_msg);
