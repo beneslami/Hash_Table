@@ -16,6 +16,7 @@
 #define MAX_CLIENTS 32
 #define OP_LEN 128
 
+extern int writer(const char *key, const char *data, const char *hash);
 int create_sync_message(char*, char*);
 void update_new_client(int, char*);
 
@@ -119,40 +120,44 @@ int create_sync_message(char *operation, char *sync_msg){
     if(!strcmp(code, "ADD")){
         op_code = ADD;
         strcpy(sync_msg, "ADD");
-        //insert data to the shared memory    TODO
+        add(table, data);
         return 0;
     }
 
     else if(!strcmp(code, "DELETE")){
         op_code = DELETE;
         strcpy(sync_msg, "DELETE");
-        //insert data to the shared memory    TODO
+        table_entry_t *node = find(table, data);
+        del(table, node);
         return 0;
     }
     else if(!strcmp(code, "FIND")){
         op_code = FIND;
         strcpy(sync_msg, "FIND");
-        // invoke find() -> linkedlist.c    TODO
-        return 0;
+        table_entry_t *node = find(table, data);
+        if(node){
+            printf("%s\n", node->hash);
+        }
+        return -1;
     }
 
     else if(!strcmp(code, "SHOW")){
         op_code = SHOW;
         strcpy(sync_msg, "NONE");
-        //ivoke show() -> linkedlist.c    TODO
+        show(table);
         return 0;
     }
 
     else if(!strcmp(code, "FLUSH")){
         op_code = FLUSH;
         strcpy(sync_msg, "FLUSH");
-        //invoke flush() -> linkedlist.c    TODO
+        flush(table);
         return 0;
     }
 
     else if(!strcmp(code, "UPDATE")){
         op_code = UPDATE;
-        strcpy(sync_msg, "UPDATE");
+        
         return 0;
     }
 
@@ -163,16 +168,22 @@ int create_sync_message(char *operation, char *sync_msg){
 }
 
 void update_new_client(int data_socket, char *sync_msg){     
-    /*
-    if the table has no item, pass this function
-    else, try to send the entire table via shared memory      TODO
-    */
+    
+    strcpy(sync_msg, "UPDATE");
     char op[10];
-    if(table || table->next){
-        strcpy(sync_msg, "UPDATE");
-        sprintf(op, "%c %s", loop, sync_msg);
+    sprintf(op, "%c %s", loop, sync_msg);
+    table_entry_t *node = table->next;
+
+    if(table || node){
         write(data_socket, op, sizeof(op));
-        //send the table via shared memory
+        while(node){
+            if(writer("/shm", node->data, node->hash) == -1){
+                perror("write");
+                break;
+            }
+            node = node->next;
+        }
+        writer("/shm", "", "");
     }
     else{
         printf("error in syncing table with other processes\n");
@@ -246,7 +257,7 @@ int main(void){
 
             update_new_client(data_socket, sync_msg);
         }
-        else if(FD_ISSET(0, &readfds)){  /* read from console */
+        else if(FD_ISSET(0, &readfds)){               /* read from console */
             ret = read(0, op, OP_LEN - 1);
             op[strcspn(op, "\r\n")] = 0; // flush new line
             if(ret < 0){
@@ -268,7 +279,7 @@ int main(void){
             system("clear");
             fflush(stdin);
         }
-        else{      /* Notify existing clients of changes */
+        else{                                         /* Notify existing clients of changes */
             int i;
             for(i = 2; i < MAX_CLIENTS; i++){
                 if(FD_ISSET(monitored_fd_set[i], &readfds)){   

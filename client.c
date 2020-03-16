@@ -11,12 +11,17 @@
 #include "linkedlist/linkedlist.h"
 
 #define SOCKET_NAME "socket"
+
 int data_socket;
 int loop = 1; // indicates if server is still up and running
 int disconnect = 1; // indicates to server that client wants to disconnect
+table_t *table;
 
 void signal_handler(int signal_num) {
     if (signal_num == SIGINT) {
+        write(data_socket, &disconnect, sizeof(int));
+        close(data_socket);
+        flush(table);
         exit(0);
     }
     else if (signal_num == SIGUSR1) {
@@ -24,9 +29,23 @@ void signal_handler(int signal_num) {
     }
 }
 
+void display(int loop){
+    char c;
+    if(loop){
+        printf("table is up to date. would you like to see it?(y/n?)\n");
+        scanf("%c", &c);
+        if (c == 'y') {
+            show(table);
+        }
+    }
+    else{
+        printf("server is disconnected\n");
+        exit(0);
+    }
+}
+
 int main(void){
 
-    table_t *table;
     table = init(); // create table
     OPCODE op_code;
     char sync_msg[10];
@@ -60,8 +79,10 @@ int main(void){
         }
         ch[rc] = '\0';
         sscanf(ch, "%d %s", &loop, sync_msg);
-  
-        process_sync_msg(table, sync_msg); // -->sync.c     TODO
+        printf("%s\n", sync_msg);
+        process_sync_msg(table, sync_msg);
+
+        display(loop);
     }
 
     free(sync_msg);
