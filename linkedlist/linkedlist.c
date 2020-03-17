@@ -72,7 +72,7 @@ int show(table_t *table){
 		return -1;
 	}
 	while(head){
-		printf("|%s\t%s|\n", head->data, head->hash);
+		printf("|%s  ->  %s|\n", head->data, head->hash);
 		head = head->next;
 	}
 	return 0;

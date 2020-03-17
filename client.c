@@ -32,11 +32,12 @@ void signal_handler(int signal_num) {
 void display(int loop){
     char c;
     if(loop){
-        printf("table is up to date. would you like to see it?(y/n?)\n");
+        printf("table is up to date. would you like to see it? (y/n)\n");
         scanf("%c", &c);
         if (c == 'y') {
             show(table);
         }
+        fflush(stdin);
     }
     else{
         printf("server is disconnected\n");

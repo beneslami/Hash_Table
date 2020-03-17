@@ -9,70 +9,61 @@
 #include <sys/stat.h>
 #include "linkedlist/linkedlist.h"
 
-struct shm_buffer {
-    char data[32];
-    char hash[32];
-    sem_t sem; //semaphore to protect access
-};
-struct shm_buffer *shmp;
-
-#define DATA_LEN sizeof(struct shm_buffer)
+#define DATA_LEN 70
 
 int writer(const char *key, const char *data, const char *hash) {
 
-    sem_init(&shmp->sem, 1, 1);
-    int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, 0666);
+    int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
         printf("Could not create shared memory\n");
         return -1;
     }
 
-    if (ftruncate(shm_fd, sizeof(struct shm_buffer)) == -1) {
+    if (ftruncate(shm_fd, DATA_LEN) == -1) {
         printf("Error on ftruncate to allocate \n");
         return -1;
     }
 
-    shmp =  mmap(NULL, sizeof(struct shm_buffer), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if(shmp == MAP_FAILED){
+    void *shmp_wr =  mmap(NULL, DATA_LEN, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if(shmp_wr == MAP_FAILED){
         printf("Mapping failed\n");
         return -1;
     }
-    
-    sem_wait(&shmp->sem);
-    memcpy(shmp->data, data, strlen(data));
-    memcpy(shmp->hash, hash, strlen(hash));
-    sem_post(&shmp->sem);
+    char shm_data[70];
+    sprintf(shm_data, "%s->%s", data, hash);
+    memcpy(shmp_wr, shm_data, strlen(shm_data));
+   
 
-    if (munmap(shmp, sizeof(struct shm_buffer)) == -1) {
+    if (munmap(shmp_wr, DATA_LEN) == -1) {
         printf("Unmapping failed\n");
         return -1;
-    }
-
+    }   
     close(shm_fd);
     return 1;
 }
 
 int reader(const char *key, char *data, char *hash) {
-    int shm_fd = shm_open(key, O_CREAT | O_RDONLY , 0666);
+    int shm_fd = shm_open(key, O_CREAT | O_RDONLY , S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
         printf("Could not open shared memory \n");
         return -1;
     }
 
-    shmp = mmap(NULL, DATA_LEN, PROT_READ, MAP_SHARED, shm_fd, 0);
-    if(shmp == MAP_FAILED){
+    void *shmp_rd = mmap(NULL, DATA_LEN, PROT_READ, MAP_SHARED, shm_fd, 0);
+    if(shmp_rd == MAP_FAILED){
         printf("Mapping failed\n");
         return -1;
     }
-    sem_wait(&shmp->sem);
-    memcpy(data, shmp->data, 32);
-    memcpy(hash, shmp->hash, 32);
-    sem_post(&shmp->sem);
+    
+    char shm_data[70];
+    memcpy(shm_data, shmp_rd, DATA_LEN);
+    sscanf(shm_data, "%s->%s", data, hash);
 
-    if (munmap(shmp, sizeof(struct shm_buffer)) == -1) {
+    if (munmap(shmp_rd, DATA_LEN) == -1) {
         printf("Unmapping failed\n");
         return -1;
     }
+    shm_unlink(key);
     close(shm_fd);
     return 1;
 }

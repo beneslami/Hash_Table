@@ -15,6 +15,7 @@
 #define SOCKET_NAME "socket"
 #define MAX_CLIENTS 32
 #define OP_LEN 128
+#define shm_key "/shm"
 
 extern int writer(const char *key, const char *data, const char *hash);
 int create_sync_message(char*, char*);
@@ -169,25 +170,24 @@ int create_sync_message(char *operation, char *sync_msg){
 
 void update_new_client(int data_socket, char *sync_msg){     
     
-    strcpy(sync_msg, "UPDATE");
+    strcpy(sync_msg, "ADD");
     char op[10];
     sprintf(op, "%c %s", loop, sync_msg);
     table_entry_t *node = table->next;
 
-    if(table || node){
+    if(node){
         write(data_socket, op, sizeof(op));
         while(node){
-            if(writer("/shm", node->data, node->hash) == -1){
+            printf("%s\n", node->data);
+            if(writer(shm_key, node->data, node->hash) == -1){
                 perror("write");
                 break;
             }
             node = node->next;
         }
-        writer("/shm", "", "");
     }
     else{
-        printf("error in syncing table with other processes\n");
-        exit(0);
+        printf("list is empty\n");
     }
 }
 
