@@ -24,7 +24,7 @@ void synchronizer_init(){
 void* writer(void* arg) {
     pack_t *pack;
     pack = (pack_t*) arg;
-
+    
     pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
@@ -50,8 +50,8 @@ void* writer(void* arg) {
         printf("Unmapping failed\n");
         return (void*)-1;
     }   
-    pthread_mutex_unlock(&mutex);
     close(shm_fd);
+    pthread_mutex_unlock(&mutex);
     pthread_cond_signal(&cnd);
     return (void*)1;
 }
@@ -61,8 +61,8 @@ void *reader(void* arg) {
     char data[32];
     char hash[32];
     
-    pthread_mutex_lock(&mutex);
     pthread_cond_wait(&cnd, &mutex);
+    pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDONLY , S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
         printf("Could not open shared memory \n");

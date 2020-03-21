@@ -179,12 +179,11 @@ void update_new_client(int data_socket, char *sync_msg){
     pthread_t tid;
     if(node){
         while(node){
-            printf("%s\n", node->data);
             void* ret_vpr;
             pack_t *pack = calloc(1, sizeof(pack_t));
             strcpy(pack->data, node->data);
             strcpy(pack->hash, node->hash);
-            pthread_create(&tid, NULL, writer, (void *)&pack);
+            pthread_create(&tid, NULL, writer, (void *)pack);
             pthread_join(tid, &ret_vpr);
             int i = (int)ret_vpr;
             printf("%d\n", i);
