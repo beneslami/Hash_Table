@@ -17,7 +17,6 @@ int process_sync_msg(table_t *table, char *sync_msg){
 	}
 
 	else if(!strcmp(sync_msg, "ADD")){
-		pack_ *pack;
 		int i = pthread_create(&tid, NULL, reader, NULL);
 		i = pthread_join(tid, &ret_vpr);
 		pack_t *ret = (pack_t *)ret_vpr;
@@ -26,8 +25,7 @@ int process_sync_msg(table_t *table, char *sync_msg){
 
 	else if(!strcmp(sync_msg, "DELETE")){
 		table_entry_t *node;
-		pack_ *pack;
-		int i = pthread_create(&tid, NULL, reader, (void*)pack);
+		int i = pthread_create(&tid, NULL, reader, NULL);
 		i = pthread_join(tid, &ret_vpr);
 		pack_t *ret = (pack_t *)ret_vpr;
 		node = find(table, ret->data);
