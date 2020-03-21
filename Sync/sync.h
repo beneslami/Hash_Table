@@ -11,6 +11,11 @@ typedef enum {
     UPDATE
 }OPCODE;
 
+typedef struct pack_{
+        char data[32];
+        char hash[32];
+    }pack_t;
+    
 int process_sync_msg(table_t *, char *);
 
 #endif

@@ -17,7 +17,8 @@
 #define OP_LEN 128
 #define shm_key "/shm"
 
-extern int writer(const char *key, const char *data, const char *hash);
+extern void synchronizer_init();
+extern void *writer(void*);
 int create_sync_message(char*, char*);
 void update_new_client(int, char*);
 
@@ -173,17 +174,27 @@ void update_new_client(int data_socket, char *sync_msg){
     strcpy(sync_msg, "ADD");
     char op[10];
     sprintf(op, "%c %s", loop, sync_msg);
-    table_entry_t *node = table->next;
+    table_entry_t *node = table->next->next;
 
+    pthread_t tid;
     if(node){
-        write(data_socket, op, sizeof(op));
         while(node){
             printf("%s\n", node->data);
-            if(writer(shm_key, node->data, node->hash) == -1){
-                perror("write");
+            void* ret_vpr;
+            pack_t *pack = calloc(1, sizeof(pack_t));
+            strcpy(pack->data, node->data);
+            strcpy(pack->hash, node->hash);
+            pthread_create(&tid, NULL, writer, (void *)&pack);
+            pthread_join(tid, &ret_vpr);
+            int i = (int)ret_vpr;
+            printf("%d\n", i);
+            if(i == -1){
+                printf("error in shared memory\n");
                 break;
             }
+            write(data_socket, op, sizeof(op));
             node = node->next;
+            free(pack);
         }
     }
     else{
@@ -196,7 +207,7 @@ int main(void){
     char sync_msg[7];
     fd_set readfds;
     table = init(); // create hash table
-
+    synchronizer_init();
     intitiaze_monitor_fd_and_client_pid_set(MAX_CLIENTS);
     add_to_monitored_fd_set(0, MAX_CLIENTS);
 

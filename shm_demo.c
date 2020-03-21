@@ -7,63 +7,87 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <semaphore.h>
+#include <pthread.h>
 #include "linkedlist/linkedlist.h"
+#include "sync/sync.h"
 
 #define DATA_LEN 70
+char *key = "/shm1";
+pthread_mutex_t mutex;
+pthread_cond_t cnd = PTHREAD_COND_INITIALIZER;
 
-int writer(const char *key, const char *data, const char *hash) {
+void synchronizer_init(){
+    pthread_mutex_init(&mutex, NULL);
+}
 
+void* writer(void* arg) {
+    pack_t *pack;
+    pack = (pack_t*) arg;
+
+    pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
         printf("Could not create shared memory\n");
-        return -1;
+        return (void*)-1;
     }
 
     if (ftruncate(shm_fd, DATA_LEN) == -1) {
         printf("Error on ftruncate to allocate \n");
-        return -1;
+        return (void*)-1;
     }
 
     void *shmp_wr =  mmap(NULL, DATA_LEN, PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if(shmp_wr == MAP_FAILED){
         printf("Mapping failed\n");
-        return -1;
+        return (void*)-1;
     }
     char shm_data[70];
-    sprintf(shm_data, "%s->%s", data, hash);
+    sprintf(shm_data, "%s -> %s", pack->data, pack->hash);
     memcpy(shmp_wr, shm_data, strlen(shm_data));
    
-
     if (munmap(shmp_wr, DATA_LEN) == -1) {
         printf("Unmapping failed\n");
-        return -1;
+        return (void*)-1;
     }   
+    pthread_mutex_unlock(&mutex);
     close(shm_fd);
-    return 1;
+    pthread_cond_signal(&cnd);
+    return (void*)1;
 }
 
-int reader(const char *key, char *data, char *hash) {
+void *reader(void* arg) {
+    pack_t *pack = calloc(1, sizeof(pack_t)); 
+    char data[32];
+    char hash[32];
+    
+    pthread_mutex_lock(&mutex);
+    pthread_cond_wait(&cnd, &mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDONLY , S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
         printf("Could not open shared memory \n");
-        return -1;
+        return (void*)-1;
     }
 
     void *shmp_rd = mmap(NULL, DATA_LEN, PROT_READ, MAP_SHARED, shm_fd, 0);
     if(shmp_rd == MAP_FAILED){
         printf("Mapping failed\n");
-        return -1;
+        return (void*)-1;
     }
     
     char shm_data[70];
     memcpy(shm_data, shmp_rd, DATA_LEN);
-    sscanf(shm_data, "%s->%s", data, hash);
+    sscanf(shm_data, "%s -> %s", data, hash);
 
     if (munmap(shmp_rd, DATA_LEN) == -1) {
         printf("Unmapping failed\n");
-        return -1;
+        return (void*)-1;
     }
+    strcpy(pack->data, data);
+    strcpy(pack->hash, hash);
     shm_unlink(key);
     close(shm_fd);
-    return 1;
+    pthread_mutex_unlock(&mutex);
+    
+    return (void*)pack;
 }
