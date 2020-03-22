@@ -192,6 +192,7 @@ void update_new_client(int data_socket, char *sync_msg){
                 break;
             }
             write(data_socket, op, sizeof(op));
+            sleep(1);
             node = node->next;
             free(pack);
         }
@@ -202,7 +203,8 @@ void update_new_client(int data_socket, char *sync_msg){
 }
 
 int main(void){
-	
+	//unlink("/shm");
+    //unlink("/shm1");
     char sync_msg[7];
     fd_set readfds;
     table = init(); // create hash table
@@ -283,6 +285,7 @@ int main(void){
                     if (comm_socket_fd != -1) {
                         sprintf(temp, "%c %s", loop, sync_msg);
                         write(comm_socket_fd, temp, sizeof(temp));
+                        sleep(1);
                     }
                 }
             }

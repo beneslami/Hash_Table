@@ -9,11 +9,12 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <errno.h>
 #include "linkedlist/linkedlist.h"
 #include "sync/sync.h"
 
 #define DATA_LEN 70
-char *key = "/shm1";
+char *key = "/shm2";
 pthread_mutex_t mutex;
 pthread_cond_t cnd = PTHREAD_COND_INITIALIZER;
 
@@ -28,8 +29,12 @@ void* writer(void* arg) {
     pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
+        int errnum;
         printf("Could not create shared memory\n");
+        errnum = errno;
+        fprintf(stderr, "Value of errno: %d\n", errno);
         perror("error");
+        fprintf(stderr, "Error opening file: %s\n", strerror( errno ));
         return (void*)-1;
     }
 

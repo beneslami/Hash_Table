@@ -17,8 +17,8 @@ int process_sync_msg(table_t *table, char *sync_msg){
 	}
 
 	else if(!strcmp(sync_msg, "ADD")){
-		int i = pthread_create(&tid, NULL, reader, NULL);
-		i = pthread_join(tid, &ret_vpr);
+		pthread_create(&tid, NULL, reader, NULL);
+		pthread_join(tid, &ret_vpr);
 		pack_t *ret = (pack_t *)ret_vpr;
 		add(table, ret->data);
 	}
