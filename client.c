@@ -83,7 +83,7 @@ int main(void){
         printf("%s\n", sync_msg);
         printf("%s\n", key);
         process_sync_msg(table, sync_msg, key);
-
+        memset(ch, 0, sizeof(ch));
         display(loop);
     }
 

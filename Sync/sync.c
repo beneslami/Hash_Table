@@ -33,6 +33,9 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 		if(node){
 			del(table, node);	
 			free(ret);
+			char temp[34];
+            sprintf(temp, "/%s", ret->data);
+            shm_unlink(temp);   
 		}
 		else{
 			printf("not found\n");

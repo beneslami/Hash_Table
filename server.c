@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
 #include "sync/sync.h"
 #include "linkedlist/linkedlist.h"
 
@@ -150,27 +152,13 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         strcpy(sync_msg, "DELETE");
         strcpy(key, data);
         table_entry_t *node = find(table, data);
-        del(table, node);
-        void* ret_vpr;
-        pack_t *pack = calloc(1, sizeof(pack_t));
-        
-        strcpy(pack->data, data);
-        strcpy(pack->hash, data);
-        strcpy(pack->key, data);
-        /* loop: indicate that the server keeps connection with client, 
-           sync_msg: indicate the op code,
-           node->data: indicate key for shared memory 
-        */
-        pthread_create(&tid, NULL, writer, (void *)pack);
-        pthread_join(tid, &ret_vpr);
-        int i = (int)ret_vpr;
-        printf("%d\n", i);
-        if(i == -1){
-            printf("error in shared memory\n");
-            return -1;
-        free(pack);
-        return 0;
+        if(node){
+            del(table, node); 
+            return 0;
         }
+        printf("data is not in the list\n");
+        return -1;
+        
     }
 
     else if(!strcmp(code, "FIND")){
