@@ -15,7 +15,6 @@
 
 #define DATA_LEN 70
 pthread_mutex_t mutex;
-pthread_cond_t cnd = PTHREAD_COND_INITIALIZER;
 
 void synchronizer_init(){
     pthread_mutex_init(&mutex, NULL);
@@ -24,7 +23,7 @@ void synchronizer_init(){
 void* writer(void* arg) {
     pack_t *pack;
     pack = (pack_t*) arg;
-    char key[33];
+    char key[34];
     sprintf(key, "/%s", pack->key);
     printf("%s\n", key);
     pthread_mutex_lock(&mutex);
@@ -59,7 +58,6 @@ void* writer(void* arg) {
     }   
     close(shm_fd);
     pthread_mutex_unlock(&mutex);
-    pthread_cond_signal(&cnd);
     return (void*)1;
 }
 

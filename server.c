@@ -117,12 +117,30 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
     char code[7], data[32];
     sscanf(operation, "%s %s", code, data);
     OPCODE op_code;
-    
+    pthread_t tid;
     if(!strcmp(code, "ADD")){
         op_code = ADD;
         strcpy(sync_msg, "ADD");
         strcpy(key, data);
         add(table, data);
+        void* ret_vpr;
+        pack_t *pack = calloc(1, sizeof(pack_t));
+        
+        strcpy(pack->data, data);
+        strcpy(pack->hash, data);
+        strcpy(pack->key, data);
+        /* loop: indicate that the server keeps connection with client, 
+           sync_msg: indicate the op code,
+           node->data: indicate key for shared memory 
+        */
+        pthread_create(&tid, NULL, writer, (void *)pack);
+        pthread_join(tid, &ret_vpr);
+        int i = (int)ret_vpr;
+        printf("%d\n", i);
+        if(i == -1){
+            printf("error in shared memory\n");
+            return -1;
+        }
         return 0;
     }
 
@@ -294,6 +312,7 @@ int main(void){
                     comm_socket_fd = monitored_fd_set[i];
                     if (comm_socket_fd != -1) {
                         sprintf(temp, "%c %s %s", loop, sync_msg, key);
+                        sleep(1);
                         write(comm_socket_fd, temp, sizeof(temp));
                         sleep(1);
                     }
