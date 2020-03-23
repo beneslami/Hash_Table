@@ -13,7 +13,7 @@
 #include "linkedlist/linkedlist.h"
 #include "sync/sync.h"
 
-#define DATA_LEN 70
+#define DATA_LEN 75
 pthread_mutex_t mutex;
 
 void synchronizer_init(){
@@ -81,7 +81,7 @@ void *reader(void* arg) {
         return (void*)-1;
     }
     
-    char shm_data[70];
+    char shm_data[75];
     memcpy(shm_data, shmp_rd, DATA_LEN);
     sscanf(shm_data, "%s -> %s", data, hash);
 

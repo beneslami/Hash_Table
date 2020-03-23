@@ -25,13 +25,11 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 	}
 
 	else if(!strcmp(sync_msg, "DELETE")){
-		table_entry_t *node;
-		char sync[10];
-		sprintf(sync, "/%s", sync_msg);
-		pthread_create(&tid, NULL, reader, (void*)sync);
+		
+		pthread_create(&tid, NULL, reader, (void*)key);
 		pthread_join(tid, &ret_vpr);
 		pack_t *ret = (pack_t *)ret_vpr;
-		node = find(table, ret->data);
+		table_entry_t *node = find(table, ret->data);
 		if(node){
 			del(table, node);	
 			free(ret);

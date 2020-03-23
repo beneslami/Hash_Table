@@ -118,6 +118,7 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
     sscanf(operation, "%s %s", code, data);
     OPCODE op_code;
     pthread_t tid;
+
     if(!strcmp(code, "ADD")){
         op_code = ADD;
         strcpy(sync_msg, "ADD");
@@ -150,8 +151,28 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         strcpy(key, data);
         table_entry_t *node = find(table, data);
         del(table, node);
+        void* ret_vpr;
+        pack_t *pack = calloc(1, sizeof(pack_t));
+        
+        strcpy(pack->data, data);
+        strcpy(pack->hash, data);
+        strcpy(pack->key, data);
+        /* loop: indicate that the server keeps connection with client, 
+           sync_msg: indicate the op code,
+           node->data: indicate key for shared memory 
+        */
+        pthread_create(&tid, NULL, writer, (void *)pack);
+        pthread_join(tid, &ret_vpr);
+        int i = (int)ret_vpr;
+        printf("%d\n", i);
+        if(i == -1){
+            printf("error in shared memory\n");
+            return -1;
+        free(pack);
         return 0;
+        }
     }
+
     else if(!strcmp(code, "FIND")){
         op_code = FIND;
         strcpy(sync_msg, "FIND");
@@ -186,6 +207,7 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         printf("invalid opcode\n");
         return -1;
     }
+    return -1;
 }
 
 void update_new_client(int data_socket, char *sync_msg){     
@@ -229,8 +251,7 @@ void update_new_client(int data_socket, char *sync_msg){
 }
 
 int main(void){
-	//unlink("/shm");
-    //unlink("/shm1");
+
     char sync_msg[7];
     fd_set readfds;
     table = init(); // create hash table
