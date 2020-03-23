@@ -2,13 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
 #include "sync.h"
 #include "../linkedlist/linkedlist.h"
 
 extern void *reader(void*);
 int process_sync_msg(table_t *table, char *sync_msg, char *key){
 	
-	char hash[32];
 	char data[32];
 	void *ret_vpr;
 	pthread_t tid;
@@ -16,25 +17,25 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 	}
 
 	else if(!strcmp(sync_msg, "ADD")){
+		pack_t *pack = calloc(1, sizeof(pack));
+		strcpy(pack->key, key);
+		pthread_create(&tid, NULL, reader, (void*)pack);
+		pthread_join(tid, &ret_vpr);		
+		add(table, pack->data);
+		free(pack);	
 		
-		pthread_create(&tid, NULL, reader, (void*)key);
-		pthread_join(tid, &ret_vpr);
-		pack_t *ret = (pack_t *)ret_vpr;
-		add(table, ret->data);
-		free(ret);
 	}
 
 	else if(!strcmp(sync_msg, "DELETE")){
-		
-		pthread_create(&tid, NULL, reader, (void*)key);
+		pack_t *pack = calloc(1, sizeof(pack_t));
+		strcpy(pack->key, key);
+		pthread_create(&tid, NULL, reader, (void*)pack);
 		pthread_join(tid, &ret_vpr);
-		pack_t *ret = (pack_t *)ret_vpr;
-		table_entry_t *node = find(table, ret->data);
+		table_entry_t *node = find(table, pack->data);
 		if(node){
 			del(table, node);	
-			free(ret);
 			char temp[34];
-            sprintf(temp, "/%s", ret->data);
+            sprintf(temp, "/%s", pack->key);
             shm_unlink(temp);   
 		}
 		else{
@@ -44,10 +45,19 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 
 	else if(!strcmp(sync_msg, "FLUSH")){
 		flush(table);
+		table = init();
 	}
 	
 	else if(!strcmp(sync_msg, "NONE")){
-		
+
 	}
 	return 0;
+}
+
+void hash_function(char* data, char* hash){
+	int i=0;
+	for( ; data[i] != '\0'; i++){
+		hash[i] = (data[i]+9);
+	}
+	hash[i] = '\0';
 }

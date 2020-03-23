@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
+#include <pthread.h>
 #include "sync/sync.h"
 #include "linkedlist/linkedlist.h"
 
@@ -116,7 +117,7 @@ void signal_handler(int signal_num){
 }
 
 int create_sync_message(char *operation, char *sync_msg, char *key){
-    char code[7], data[32];
+    char code[7], data[32], hash[32];
     sscanf(operation, "%s %s", code, data);
     OPCODE op_code;
     pthread_t tid;
@@ -126,20 +127,10 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         strcpy(sync_msg, "ADD");
         strcpy(key, data);
         add(table, data);
-        void* ret_vpr;
-        pack_t *pack = calloc(1, sizeof(pack_t));
-        
-        strcpy(pack->data, data);
-        strcpy(pack->hash, data);
-        strcpy(pack->key, data);
-        /* loop: indicate that the server keeps connection with client, 
-           sync_msg: indicate the op code,
-           node->data: indicate key for shared memory 
-        */
-        pthread_create(&tid, NULL, writer, (void *)pack);
+        void *ret_vpr;
+        pthread_create(&tid, NULL, writer, (void*)data);
         pthread_join(tid, &ret_vpr);
         int i = (int)ret_vpr;
-        printf("%d\n", i);
         if(i == -1){
             printf("error in shared memory\n");
             return -1;
@@ -167,6 +158,7 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         table_entry_t *node = find(table, data);
         if(node){
             printf("%s\n", node->hash);
+            return 0;
         }
         return -1;
     }
@@ -182,6 +174,7 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         op_code = FLUSH;
         strcpy(sync_msg, "FLUSH");
         flush(table);
+        table = init();
         return 0;
     }
 
@@ -201,36 +194,16 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
 void update_new_client(int data_socket, char *sync_msg){     
     
     strcpy(sync_msg, "ADD");
-    char op[40];
+    char op[40], operation[40];
     table_entry_t *node = table->next->next;
-
     pthread_t tid;
     if(node){
         while(node){
-            void* ret_vpr;
-            pack_t *pack = calloc(1, sizeof(pack_t));
-            
-            strcpy(pack->data, node->data);
-            strcpy(pack->hash, node->hash);
-            strcpy(pack->key, node->data);
-            sprintf(op, "%c %s %s", loop, sync_msg, node->data); 
-            /* loop: indicate that the server keeps connection with client, 
-               sync_msg: indicate the op code,
-               node->data: indicate key for shared memory 
-            */
-            pthread_create(&tid, NULL, writer, (void *)pack);
-            pthread_join(tid, &ret_vpr);
-            int i = (int)ret_vpr;
-            printf("%d\n", i);
-            if(i == -1){
-                printf("error in shared memory\n");
-                break;
-            }
+            sprintf(op, "%c %s %s", loop, sync_msg, node->data);
             sleep(1);
             write(data_socket, op, sizeof(op));
-            sleep(1);
+            sleep(1);    
             node = node->next;
-            free(pack);
         }
     }
     else{
@@ -322,7 +295,8 @@ int main(void){
                     if (comm_socket_fd != -1) {
                         sprintf(temp, "%c %s %s", loop, sync_msg, key);
                         sleep(1);
-                        write(comm_socket_fd, temp, sizeof(temp));
+                        if(!strcmp(sync_msg, "ADD") || !strcmp(sync_msg, "DELETE") || !strcmp(sync_msg, "FLUSH"))
+                            write(comm_socket_fd, temp, sizeof(temp));
                         sleep(1);
                     }
                 }

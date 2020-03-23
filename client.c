@@ -80,8 +80,6 @@ int main(void){
         }
         ch[rc] = '\0';
         sscanf(ch, "%d %s %s", &loop, sync_msg, key);
-        printf("%s\n", sync_msg);
-        printf("%s\n", key);
         process_sync_msg(table, sync_msg, key);
         memset(ch, 0, sizeof(ch));
         display(loop);

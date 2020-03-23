@@ -21,11 +21,12 @@ void synchronizer_init(){
 }
 
 void* writer(void* arg) {
-    pack_t *pack;
-    pack = (pack_t*) arg;
-    char key[34];
-    sprintf(key, "/%s", pack->key);
-    printf("%s\n", key);
+    
+    char *pack = (char*)arg;
+    char key[33];
+    char data[33];
+    sprintf(key, "/%s", pack);
+    strcpy(data, pack);
     pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
@@ -38,19 +39,17 @@ void* writer(void* arg) {
         return (void*)-1;
     }
 
-    if (ftruncate(shm_fd, DATA_LEN) == -1) {
+    if (ftruncate(shm_fd, 40) == -1) {
         printf("Error on ftruncate to allocate \n");
         return (void*)-1;
     }
 
-    void *shmp_wr =  mmap(NULL, DATA_LEN, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    void *shmp_wr =  mmap(NULL, 40, PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if(shmp_wr == MAP_FAILED){
         printf("Mapping failed\n");
         return (void*)-1;
     }
-    char shm_data[70];
-    sprintf(shm_data, "%s -> %s", pack->data, pack->hash);
-    memcpy(shmp_wr, shm_data, strlen(shm_data));
+    memcpy(shmp_wr, data, strlen(data));
    
     if (munmap(shmp_wr, DATA_LEN) == -1) {
         printf("Unmapping failed\n");
@@ -62,12 +61,9 @@ void* writer(void* arg) {
 }
 
 void *reader(void* arg) {
-    pack_t *pack = calloc(1, sizeof(pack_t)); 
-    char data[32];
-    char hash[32];
-    char key[32];
-    sprintf(key, "/%s",(char*)arg);
-    printf("%s\n", key);
+    pack_t *pack = (pack_t*)arg;
+    char key[33];
+    sprintf(key, "/%s",(char*)pack->key);
     pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDONLY , S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
@@ -81,16 +77,13 @@ void *reader(void* arg) {
         return (void*)-1;
     }
     
-    char shm_data[75];
-    memcpy(shm_data, shmp_rd, DATA_LEN);
-    sscanf(shm_data, "%s -> %s", data, hash);
+    memcpy(pack->data, shmp_rd, 32);
 
     if (munmap(shmp_rd, DATA_LEN) == -1) {
         printf("Unmapping failed\n");
         return (void*)-1;
     }
-    strcpy(pack->data, data);
-    strcpy(pack->hash, hash);
+    
     close(shm_fd);
     pthread_mutex_unlock(&mutex);
     

@@ -11,12 +11,12 @@ typedef enum {
     UPDATE
 }OPCODE;
 
-typedef struct pack_{
+typedef struct pack_{   //this data structure is for passing arguments to threads 
         char data[32];
-        char hash[32];
         char key[8];
     }pack_t;
     
 int process_sync_msg(table_t *, char *, char *);
+void hash_function(char*, char*);
 
 #endif
