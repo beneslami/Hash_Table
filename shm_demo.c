@@ -14,7 +14,6 @@
 #include "sync/sync.h"
 
 #define DATA_LEN 70
-char *key = "/shm2";
 pthread_mutex_t mutex;
 pthread_cond_t cnd = PTHREAD_COND_INITIALIZER;
 
@@ -25,7 +24,9 @@ void synchronizer_init(){
 void* writer(void* arg) {
     pack_t *pack;
     pack = (pack_t*) arg;
-    
+    char key[33];
+    sprintf(key, "/%s", pack->key);
+    printf("%s\n", key);
     pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
@@ -66,9 +67,10 @@ void *reader(void* arg) {
     pack_t *pack = calloc(1, sizeof(pack_t)); 
     char data[32];
     char hash[32];
-    
+    char key[32];
+    sprintf(key, "/%s",(char*)arg);
+    printf("%s\n", key);
     pthread_mutex_lock(&mutex);
-    pthread_cond_wait(&cnd, &mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDONLY , S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
         printf("Could not open shared memory \n");
@@ -91,7 +93,6 @@ void *reader(void* arg) {
     }
     strcpy(pack->data, data);
     strcpy(pack->hash, hash);
-    shm_unlink(key);
     close(shm_fd);
     pthread_mutex_unlock(&mutex);
     

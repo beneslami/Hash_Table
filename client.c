@@ -70,8 +70,8 @@ int main(void){
     signal(SIGINT, signal_handler);  //register signal handler
     signal(SIGUSR1, signal_handler);
     int rc;
-    char ch[32];
-
+    char ch[45];
+    char key[32];
     while(loop){
         rc = read(data_socket, ch, sizeof(ch));
         if(rc < 0){
@@ -79,9 +79,10 @@ int main(void){
             break;
         }
         ch[rc] = '\0';
-        sscanf(ch, "%d %s", &loop, sync_msg);
+        sscanf(ch, "%d %s %s", &loop, sync_msg, key);
         printf("%s\n", sync_msg);
-        process_sync_msg(table, sync_msg);
+        printf("%s\n", key);
+        process_sync_msg(table, sync_msg, key);
 
         display(loop);
     }

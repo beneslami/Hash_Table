@@ -15,11 +15,10 @@
 #define SOCKET_NAME "socket"
 #define MAX_CLIENTS 32
 #define OP_LEN 128
-#define shm_key "/shm"
 
 extern void synchronizer_init();
 extern void *writer(void*);
-int create_sync_message(char*, char*);
+int create_sync_message(char*, char*, char*);
 void update_new_client(int, char*);
 
 int monitored_fd_set[MAX_CLIENTS];
@@ -114,7 +113,7 @@ void signal_handler(int signal_num){
     }
 }
 
-int create_sync_message(char *operation, char *sync_msg){
+int create_sync_message(char *operation, char *sync_msg, char *key){
     char code[7], data[32];
     sscanf(operation, "%s %s", code, data);
     OPCODE op_code;
@@ -122,6 +121,7 @@ int create_sync_message(char *operation, char *sync_msg){
     if(!strcmp(code, "ADD")){
         op_code = ADD;
         strcpy(sync_msg, "ADD");
+        strcpy(key, data);
         add(table, data);
         return 0;
     }
@@ -129,6 +129,7 @@ int create_sync_message(char *operation, char *sync_msg){
     else if(!strcmp(code, "DELETE")){
         op_code = DELETE;
         strcpy(sync_msg, "DELETE");
+        strcpy(key, data);
         table_entry_t *node = find(table, data);
         del(table, node);
         return 0;
@@ -172,8 +173,7 @@ int create_sync_message(char *operation, char *sync_msg){
 void update_new_client(int data_socket, char *sync_msg){     
     
     strcpy(sync_msg, "ADD");
-    char op[10];
-    sprintf(op, "%c %s", loop, sync_msg);
+    char op[40];
     table_entry_t *node = table->next->next;
 
     pthread_t tid;
@@ -181,8 +181,15 @@ void update_new_client(int data_socket, char *sync_msg){
         while(node){
             void* ret_vpr;
             pack_t *pack = calloc(1, sizeof(pack_t));
+            
             strcpy(pack->data, node->data);
             strcpy(pack->hash, node->hash);
+            strcpy(pack->key, node->data);
+            sprintf(op, "%c %s %s", loop, sync_msg, node->data); 
+            /* loop: indicate that the server keeps connection with client, 
+               sync_msg: indicate the op code,
+               node->data: indicate key for shared memory 
+            */
             pthread_create(&tid, NULL, writer, (void *)pack);
             pthread_join(tid, &ret_vpr);
             int i = (int)ret_vpr;
@@ -191,6 +198,7 @@ void update_new_client(int data_socket, char *sync_msg){
                 printf("error in shared memory\n");
                 break;
             }
+            sleep(1);
             write(data_socket, op, sizeof(op));
             sleep(1);
             node = node->next;
@@ -277,13 +285,15 @@ int main(void){
                 break;
             }
             op[ret] = 0;
-            char temp[32];
-            if(!create_sync_message(op, sync_msg)){
+            char temp[45];
+            char key[32];
+
+            if(!create_sync_message(op, sync_msg, key)){
                 int i, comm_socket_fd;
                 for (i = 2; i < MAX_CLIENTS; i++) { // start at 2 since 0 for server's console and 1 for connection_socket
                     comm_socket_fd = monitored_fd_set[i];
                     if (comm_socket_fd != -1) {
-                        sprintf(temp, "%c %s", loop, sync_msg);
+                        sprintf(temp, "%c %s %s", loop, sync_msg, key);
                         write(comm_socket_fd, temp, sizeof(temp));
                         sleep(1);
                     }
