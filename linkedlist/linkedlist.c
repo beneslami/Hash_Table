@@ -76,15 +76,22 @@ int del(table_t *table, char* data){
             
             while(current){
                 if(!strcmp(current->data, data)){
-                    if(current == head->next_data){
+                    if(current == head->next_data){ // first data item 
                         head->next_data = current->next;
+                        free(current);
                         if(head->next_data == NULL){
-                            table->next = head->next_hash;
-                            free(head);
+                            if(head == table->next){
+                                table->next = head->next_hash;
+                                free(head);
+                            }
+                            else{
+                                prev->next_hash = head->next_hash;
+                                free(head);
+                            }
                         }
                         return 0;
                     }
-                    else if (current->next == NULL){
+                    if (current->next == NULL){ //last data item
                         free(current);
                         if(head->next_data == NULL){
                             prev->next_hash = head->next_hash;
@@ -92,7 +99,7 @@ int del(table_t *table, char* data){
                         }
                         return 0;
                     }
-                    else{
+                    else{                           //middle data item
                         previous->next = current->next;
                         free(current);
                         if(head->next_data == NULL){
@@ -137,7 +144,7 @@ int find(table_t *table, char *data){
 int show(table_t *table){
     table_entry_t *head = table->next;
     data_entry_t *current; 
-    if(head->next_data == NULL){
+    if(head == NULL){
         printf("table is empty\n");
         return -1;
     }
