@@ -20,26 +20,25 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 		pack_t *pack = calloc(1, sizeof(pack));
 		strcpy(pack->key, key);
 		pthread_create(&tid, NULL, reader, (void*)pack);
-		pthread_join(tid, &ret_vpr);		
+		pthread_join(tid, &ret_vpr);
 		add(table, pack->data);
 		free(pack);	
-		
 	}
 
 	else if(!strcmp(sync_msg, "DELETE")){
 		pack_t *pack = calloc(1, sizeof(pack_t));
 		strcpy(pack->key, key);
 		pthread_create(&tid, NULL, reader, (void*)pack);
-		pthread_join(tid, &ret_vpr);
-		table_entry_t *node = find(table, pack->data);
-		if(node){
-			del(table, node);	
+		pthread_join(tid, &ret_vpr);		
+		int rc = del(table, pack->data);
+		if (rc == 0){
 			char temp[34];
-            sprintf(temp, "/%s", pack->key);
-            shm_unlink(temp);   
-		}
+        	sprintf(temp, "/%s", pack->key);
+        	shm_unlink(temp);   
+		}	
 		else{
-			printf("not found\n");
+			printf("Operation not done\n");
+			return -1;	
 		}
 	}
 

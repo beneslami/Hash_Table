@@ -22,19 +22,13 @@ void synchronizer_init(){
 
 void* writer(void* arg) {
     
-    char *pack = (char*)arg;
+    char *data = (char*)arg;
     char key[33];
-    char data[33];
-    sprintf(key, "/%s", pack);
-    strcpy(data, pack);
+    sprintf(key, "/%s", data);
+
     pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {
-        int errnum;
-        printf("Could not create shared memory\n");
-        errnum = errno;
-        fprintf(stderr, "Value of errno: %d\n", errno);
-        perror("error");
         fprintf(stderr, "Error opening file: %s\n", strerror( errno ));
         return (void*)-1;
     }
@@ -64,6 +58,7 @@ void *reader(void* arg) {
     pack_t *pack = (pack_t*)arg;
     char key[33];
     sprintf(key, "/%s",(char*)pack->key);
+    
     pthread_mutex_lock(&mutex);
     int shm_fd = shm_open(key, O_CREAT | O_RDONLY , S_IRUSR | S_IWUSR);
     if (shm_fd == -1) {

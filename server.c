@@ -120,15 +120,16 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
     char code[7], data[32], hash[32];
     sscanf(operation, "%s %s", code, data);
     OPCODE op_code;
+    hash_function(data, key);
     pthread_t tid;
+    strcpy(key, data);
 
     if(!strcmp(code, "ADD")){
         op_code = ADD;
         strcpy(sync_msg, "ADD");
-        strcpy(key, data);
         add(table, data);
         void *ret_vpr;
-        pthread_create(&tid, NULL, writer, (void*)data);
+        pthread_create(&tid, NULL, writer, (void*)key);
         pthread_join(tid, &ret_vpr);
         int i = (int)ret_vpr;
         if(i == -1){
@@ -142,25 +143,23 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         op_code = DELETE;
         strcpy(sync_msg, "DELETE");
         strcpy(key, data);
-        table_entry_t *node = find(table, data);
-        if(node){
-            del(table, node); 
-            return 0;
+        int n = del(table, data);
+        if(n == -1){
+            printf("data is not in the list\n");
+            return -1;
         }
-        printf("data is not in the list\n");
-        return -1;
-        
+        return 0;
     }
 
     else if(!strcmp(code, "FIND")){
         op_code = FIND;
         strcpy(sync_msg, "FIND");
-        table_entry_t *node = find(table, data);
-        if(node){
-            printf("%s\n", node->hash);
-            return 0;
+        int node = find(table, data);
+        if(node == -1){
+            printf("Data not found\n");
+            return -1;
         }
-        return -1;
+        return 0;
     }
 
     else if(!strcmp(code, "SHOW")){
@@ -195,15 +194,15 @@ void update_new_client(int data_socket, char *sync_msg){
     
     strcpy(sync_msg, "ADD");
     char op[40], operation[40];
-    table_entry_t *node = table->next->next;
+    table_entry_t *node = table->next;
     pthread_t tid;
-    if(node){
+    if(node->next_data){
         while(node){
-            sprintf(op, "%c %s %s", loop, sync_msg, node->data);
+            sprintf(op, "%c %s %s", loop, sync_msg, node->hash);
             sleep(1);
             write(data_socket, op, sizeof(op));
             sleep(1);    
-            node = node->next;
+            node = node->next_hash;
         }
     }
     else{
