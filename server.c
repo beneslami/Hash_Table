@@ -179,7 +179,7 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
 
     else if(!strcmp(code, "UPDATE")){
         op_code = UPDATE;
-        
+
         return 0;
     }
 
@@ -190,24 +190,29 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
     return -1;
 }
 
-void update_new_client(int data_socket, char *sync_msg){     
-    
-    strcpy(sync_msg, "ADD");
-    char op[40], operation[40];
-    table_entry_t *node = table->next;
-    pthread_t tid;
-    if(node->next_data){
-        while(node){
-            sprintf(op, "%c %s %s", loop, sync_msg, node->hash);
-            sleep(1);
-            write(data_socket, op, sizeof(op));
-            sleep(1);    
-            node = node->next_hash;
-        }
-    }
-    else{
-        printf("list is empty\n");
-    }
+void update_new_client(int data_socket, char *sync_msg){
+
+  strcpy(sync_msg, "ADD");
+  char op[40], operation[40];
+  table_entry_t *node = table->next;
+  data_entry_t *item;
+  pthread_t tid;
+  if(node->next_data){
+      while(node){
+          item = node->next_data;
+          while(item){
+              sprintf(op, "%c %s %s", loop, sync_msg, item->data);
+              sleep(1);
+              write(data_socket, op, sizeof(op));
+              sleep(1);
+              item = item->next;
+          }
+          node = node->next_hash;
+      }
+  }
+  else{
+      printf("list is empty\n");
+  }
 }
 
 int main(void){
@@ -244,7 +249,7 @@ int main(void){
     add_to_monitored_fd_set(connection_socket, MAX_CLIENTS);
 
     signal(SIGINT, signal_handler);  //register signal handlers
-    
+
     while(1){
         char op[OP_LEN];
         refresh_fd_set(&readfds, MAX_CLIENTS); /*Copy the entire monitored FDs to readfds*/
@@ -256,21 +261,21 @@ int main(void){
         printf("5) FLUSH\n");
 
         select(get_max_fd(MAX_CLIENTS) + 1, &readfds, NULL, NULL, NULL);  /* Wait for incoming connections. */
-	
-		
+
+
         if(FD_ISSET(connection_socket, &readfds)){    /* New connection */
             data_socket = accept(connection_socket, NULL, NULL);
             if (data_socket == -1) {
                 perror("accept");
                 exit(1);
             }
-        
+
             pid_t pid;
             if (read(data_socket, &pid, sizeof(pid_t)) == -1) {
                 perror("read");
                 exit(1);
             }
-            
+
             add_to_monitored_fd_set(data_socket, MAX_CLIENTS);
             add_to_client_pid_set(pid, MAX_CLIENTS);
 
@@ -306,7 +311,7 @@ int main(void){
         else{                                         /* Notify existing clients of changes */
             int i;
             for(i = 2; i < MAX_CLIENTS; i++){
-                if(FD_ISSET(monitored_fd_set[i], &readfds)){   
+                if(FD_ISSET(monitored_fd_set[i], &readfds)){
                     int done;
                     int comm_socket_fd = monitored_fd_set[i];
                     ret = read(comm_socket_fd, &done, sizeof(int));
