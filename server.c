@@ -202,9 +202,9 @@ void update_new_client(int data_socket, char *sync_msg){
           item = node->next_data;
           while(item){
               sprintf(op, "%c %s %s", loop, sync_msg, item->data);
-              sleep(1);
+              //sleep(1);
               write(data_socket, op, sizeof(op));
-              sleep(1);
+              //sleep(1);
               item = item->next;
           }
           node = node->next_hash;
@@ -298,10 +298,10 @@ int main(void){
                     comm_socket_fd = monitored_fd_set[i];
                     if (comm_socket_fd != -1) {
                         sprintf(temp, "%c %s %s", loop, sync_msg, key);
-                        sleep(1);
+                        //sleep(1);
                         if(!strcmp(sync_msg, "ADD") || !strcmp(sync_msg, "DELETE") || !strcmp(sync_msg, "FLUSH"))
                             write(comm_socket_fd, temp, sizeof(temp));
-                        sleep(1);
+                        //sleep(1);
                     }
                 }
             }
