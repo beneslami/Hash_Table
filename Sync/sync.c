@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
+#include <sys/time.h>
+#include <time.h>
 #include "sync.h"
 #include "../linkedlist/linkedlist.h"
 
@@ -22,6 +24,7 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 		pthread_create(&tid, NULL, reader, (void*)pack);
 		pthread_join(tid, &ret_vpr);
 		add(table, pack->data);
+		finish_timer();
 		free(pack);	
 	}
 
@@ -59,4 +62,21 @@ void hash_function(char* data, char* hash){
 		hash[i] = (data[i]+9);
 	}
 	hash[i] = '\0';
+}
+
+void init_timer(){
+	//t1 = 0.0;
+	//t2 = 0.0;
+}
+
+void start_timer(){
+	gettimeofday(&start_time, NULL);
+}
+
+void finish_timer(){
+	gettimeofday(&end_time, NULL);
+}
+
+double calculate_timer(){
+	return (start_time.tv_usec - end_time.tv_usec)/1000; /*  returns elapsed time in microseconds*/
 }
