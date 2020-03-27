@@ -36,3 +36,9 @@ Raw data is prcessed via a python script which can be found in statistics/plot.p
 ![picture](size50.png)
 
 For further evaluation, I provided 100 input data and the result of this is as below:
+
+![picture](size100.png)
+
+According to above plot, the diagram is quite similar to the first one. I personally assume that if I choose the number of input data close to infinity (very very big), the output diagram will look like right skewed Gaussian Distribution (just like below diagram).
+
+![picture](skew.png)
