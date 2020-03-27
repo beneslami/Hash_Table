@@ -1,4 +1,4 @@
-#Hash_Table
+# Hash_Table
 
 The purpose of this project is to implement a simple hash-table using various IPC techniques.
 
@@ -29,4 +29,7 @@ On other side, the client receives a control message from server, parses it and 
 
 Note that, only ADD op-code needs shared memory region, because the table is synchronized at the beginning of running the client.
 
-It is also worth mentioning that while the client only prints data just for demonstration purposes, the concept of data synchronization using IPC mechanisms can easily be extended to real-life systems. 
+It is also worth mentioning that while the client only prints data just for demonstration purposes, the concept of data synchronization using IPC mechanisms can easily be extended to real-life systems.
+
+
+![picture](size50.png)
