@@ -11,7 +11,7 @@ table_t *init(){
     table_entry_t *node = calloc(1, sizeof(table_entry_t));
     node->next_hash = NULL;
     node->next_data = NULL;
-    strcpy(node->hash, "NULL"); 
+    strcpy(node->hash, "NULL");
     table->next = node;
     return table;
 }
@@ -22,7 +22,7 @@ int add(table_t *table, char *data){
     char hash[32];
     hash_function(data, hash);
 
-    if(!strcmp(head->hash, "NULL")){ 
+    if(!strcmp(head->hash, "NULL")){
         data_entry_t *item = calloc(1, sizeof(data_entry_t));
         strcpy(item->data, data);
         item->next = NULL;
@@ -73,10 +73,10 @@ int del(table_t *table, char* data){
     while(head){
         if(!strcmp(head->hash, hash)){
             data_entry_t *current = head->next_data;
-            
+
             while(current){
                 if(!strcmp(current->data, data)){
-                    if(current == head->next_data){ // first data item 
+                    if(current == head->next_data){ // first data item
                         head->next_data = current->next;
                         free(current);
                         if(head->next_data == NULL){
@@ -143,7 +143,7 @@ int find(table_t *table, char *data){
 
 int show(table_t *table){
     table_entry_t *head = table->next;
-    data_entry_t *current; 
+    data_entry_t *current;
     if(head == NULL){
         printf("table is empty\n");
         return -1;
@@ -167,7 +167,7 @@ int show(table_t *table){
 int flush(table_t *table){
     table_entry_t *head = table->next;
     table_entry_t *temp;
-    data_entry_t *current, *previous; 
+    data_entry_t *current, *previous;
     if(head->next_data == NULL){
         printf("table is empty\n");
         return -1;
@@ -183,7 +183,7 @@ int flush(table_t *table){
         temp = head;
         head = head->next_hash;
         free(temp);
-    }  
+    }
     free(table);
     return 0;
 }

@@ -72,6 +72,7 @@ int main(void){
     int rc;
     char ch[45];
     char key[32];
+    
     while(loop){
         rc = read(data_socket, ch, sizeof(ch));
         if(rc < 0){
@@ -82,7 +83,7 @@ int main(void){
         sscanf(ch, "%d %s %s", &loop, sync_msg, key);
         process_sync_msg(table, sync_msg, key);
         memset(ch, 0, sizeof(ch));
-        display(loop);
+        //display(loop);
     }
 
     free(sync_msg);

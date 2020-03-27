@@ -1,5 +1,5 @@
 CC = gcc
-DEPSRC = sync/sync.c linkedlist/linkedlist.c shm_demo.c
+DEPSRC = sync/sync.c linkedlist/linkedlist.c shm_demo.c benchmark.c
 CFLAGS = -Wall -Wextra
 
 TARGET: server client
