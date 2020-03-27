@@ -32,7 +32,7 @@ Note that, only ADD op-code needs shared memory region, because the table is syn
 It is also worth mentioning that while the client only prints data just for demonstration purposes, the concept of data synchronization using IPC mechanisms can easily be extended to real-life systems.
 
 Regarding benchmarking, the evaluation process is provided in another branch (benchmarking). The first observation is done with 50 inputs.
-Raw data is prcessed via a python script which can be found in statistics/plot.py. The first result is as below.
+Raw data is processed via a python script which can be found in statistics/plot.py. The first result is as below.
 ![picture](size50.png)
 
 For further evaluation, I provided 100 input data and the result of this is as below:
