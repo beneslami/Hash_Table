@@ -225,7 +225,7 @@ int main(void){
     add_to_monitored_fd_set(0, MAX_CLIENTS);
 
 	int connection_socket, data_socket, ret; //crete socket
-    OPCODE op_code;
+  OPCODE op_code;
 	struct sockaddr_un name;
 	unlink(SOCKET_NAME);
 	connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -254,7 +254,7 @@ int main(void){
         input = fopen("input.txt", "r");
         char op[OP_LEN];
         refresh_fd_set(&readfds, MAX_CLIENTS); /*Copy the entire monitored FDs to readfds*/
-    	printf("Enter operation\n");
+    	  printf("Enter operation\n");
         printf("1) ADD <DATA>\n");
         printf("2) DELETE <DATA>\n");
         printf("3) FIND <DATA>\n");
@@ -292,27 +292,22 @@ int main(void){
             op[ret] = 0;
             char temp[40];
             char key[32];
-            char op2[40];
-
-            while(fgets(op2, 40, input)){
-                if(!create_sync_message(op2, sync_msg, key)){
-                    int i, comm_socket_fd;
-                    for (i = 2; i < MAX_CLIENTS; i++) { // start at 2 since 0 for server's console and 1 for connection_socket
-                        comm_socket_fd = monitored_fd_set[i];
-                        if (comm_socket_fd != -1) {
-                            sprintf(temp, "%c %s %s", loop, sync_msg, key);
-                            printf("%s\n", key);
-                            //sleep(1);
-                            if(!strcmp(sync_msg, "ADD") || !strcmp(sync_msg, "DELETE") || !strcmp(sync_msg, "FLUSH"))
-                                write(comm_socket_fd, temp, sizeof(temp));
-                            //sleep(1);
-                        }
+            if(!create_sync_message(op, sync_msg, key)){
+                int i, comm_socket_fd;
+                for (i = 2; i < MAX_CLIENTS; i++) { // start at 2 since 0 for server's console and 1 for connection_socket
+                    comm_socket_fd = monitored_fd_set[i];
+                    if (comm_socket_fd != -1) {
+                        sprintf(temp, "%c %s %s", loop, sync_msg, key);
+                        printf("%s\n", key);
+                        //sleep(1);
+                        if(!strcmp(sync_msg, "ADD") || !strcmp(sync_msg, "DELETE") || !strcmp(sync_msg, "FLUSH"))
+                            write(comm_socket_fd, temp, sizeof(temp));
+                        //sleep(1);
                     }
                 }
             }
             system("clear");
             fflush(stdin);
-            fclose(input);
         }
         else{                                         /* Notify existing clients of changes */
             int i;
