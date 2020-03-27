@@ -20,7 +20,4 @@ typedef struct pack_{   //this data structure is for passing arguments to thread
 int process_sync_msg(table_t *, char *, char *);
 void hash_function(char*, char*);
 void init_timer();
-void start_timer();
-void finish_timer();
-double calculate_timer();
 #endif

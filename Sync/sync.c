@@ -9,7 +9,7 @@
 #include "sync.h"
 #include "../linkedlist/linkedlist.h"
 
-extern finish_timer(FILE*);
+extern void finish_timer(FILE*);
 extern void *reader(void*);
 int process_sync_msg(table_t *table, char *sync_msg, char *key){
 
@@ -25,7 +25,7 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 		pthread_create(&tid, NULL, reader, (void*)pack);
 		pthread_join(tid, &ret_vpr);
 		add(table, pack->data);
-		FILE *file = open("statistics/out.txt", "ab");
+		FILE *file = fopen("statistics/out.txt", "ab");
 		finish_timer(file);
 		fclose(file);
 		free(pack);
@@ -65,21 +65,4 @@ void hash_function(char* data, char* hash){
 		hash[i] = (data[i]+9);
 	}
 	hash[i] = '\0';
-}
-
-void init_timer(){
-	//t1 = 0.0;
-	//t2 = 0.0;
-}
-
-void start_timer(){
-	gettimeofday(&start_time, NULL);
-}
-
-void finish_timer(){
-	gettimeofday(&end_time, NULL);
-}
-
-double calculate_timer(){
-	return (start_time.tv_usec - end_time.tv_usec)/1000; /*  returns elapsed time in microseconds*/
 }

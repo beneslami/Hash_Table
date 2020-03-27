@@ -1,11 +1,11 @@
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
-data_in = open("../in.txt", "r")
-data_out = open("../out.txt", "r")
+data_in = open("in.txt", "r")
+data_out = open("out.txt", "r")
 
 input_arr = data_in.readlines()
 input_arr = [int(i) for i in input_arr]
-output_arr = data_out.readlines()	
+output_arr = data_out.readlines()
 output_arr = [int(i) for i in output_arr]
 
 data = []
