@@ -26,9 +26,6 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 		pthread_create(&tid, NULL, reader, (void*)pack);
 		pthread_join(tid, &ret_vpr);
 		add(table, pack->data);
-		file = fopen("out.txt", "ab");
-		finish_timer(file);
-		fclose(file);
 		free(pack);
 	}
 
