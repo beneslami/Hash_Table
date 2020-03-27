@@ -28,3 +28,5 @@ key: The key for shared memory region. In this implementation, for simplicity, I
 On other side, the client receives a control message from server, parses it and figures out that there is a data in a shared memory region with **key** value. So, it collects the data and according to parsed control message, it adds the data to its local table.
 
 Note that, only ADD op-code needs shared memory region, because the table is synchronized at the beginning of running the client.
+
+It is also worth mentioning that while the client only prints data just for demonstration purposes, the concept of data synchronization using IPC mechanisms can easily be extended to real-life systems. 
