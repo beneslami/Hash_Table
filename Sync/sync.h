@@ -2,7 +2,6 @@
 #define SYNC_H
 #include "../linkedlist/linkedlist.h"
 #include <time.h>
-#include <stdio.h>
 
 typedef enum {
     ADD = 1,
@@ -13,7 +12,7 @@ typedef enum {
     UPDATE
 }OPCODE;
 
-typedef struct pack_{   //this data structure is for passing arguments to threads 
+typedef struct pack_{   //this data structure is for passing arguments to threads
         char data[32];
         char key[8];
     }pack_t;
