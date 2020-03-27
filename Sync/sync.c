@@ -20,7 +20,6 @@ int process_sync_msg(table_t *table, char *sync_msg, char *key){
 	}
 
 	else if(!strcmp(sync_msg, "ADD")){
-		FILE *file;
 		pack_t *pack = calloc(1, sizeof(pack));
 		strcpy(pack->key, key);
 		pthread_create(&tid, NULL, reader, (void*)pack);
