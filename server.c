@@ -128,7 +128,7 @@ int create_sync_message(char *operation, char *sync_msg, char *key){
         op_code = ADD;
         strcpy(sync_msg, "ADD");
         void *ret_vpr;
-        FILE *file = fopen("in.txt", "ab");
+        FILE *file = fopen("statistics/in.txt", "ab");
         start_timer(file);
         fclose(file);
         add(table, data);
