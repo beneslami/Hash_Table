@@ -109,7 +109,8 @@ int get_max_fd(int size){
 }
 
 void signal_handler(int signal_num){
-    if(signal_num == SIGINT){
+    if(signal_num == SIGINT)
+    {
       int i;
       char _loop = '0';
       char temp[30];
@@ -124,7 +125,7 @@ void signal_handler(int signal_num){
       }
       flush(table);
       close(connection_socket);
-      remove_from_monitored_fd_set(connection_socket);
+      remove_from_monitored_fd_set(connection_socket, MAX_CLIENTS);
       unlink(SOCKET_NAME);
       exit(0);
     }
