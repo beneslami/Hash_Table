@@ -28,6 +28,7 @@ int monitored_fd_set[MAX_CLIENTS];
 pid_t client_pid_set[MAX_CLIENTS];
 table_t *table;
 char loop = '1';
+int connection_socket;
 
 void intitiaze_monitor_fd_and_client_pid_set(int size){
     int i = 0;
@@ -108,10 +109,24 @@ int get_max_fd(int size){
 }
 
 void signal_handler(int signal_num){
-    if(signal_num == SIGINT)
-    {
-        unlink(SOCKET_NAME);
-        exit(0);
+    if(signal_num == SIGINT){
+      int i;
+      char _loop = '0';
+      char temp[30];
+      char sync_msg[6];
+      strcpy(sync_msg, "NONE");
+      sprintf(temp, "%c %s %s", _loop, sync_msg, "");
+      for(i = 2; i < MAX_CLIENTS; i++){
+          int comm_socket_fd = monitored_fd_set[i];
+          if (comm_socket_fd != -1) {
+            write(comm_socket_fd, temp, sizeof(temp));
+          }
+      }
+      flush(table);
+      close(connection_socket);
+      remove_from_monitored_fd_set(connection_socket);
+      unlink(SOCKET_NAME);
+      exit(0);
     }
 }
 
@@ -224,7 +239,7 @@ int main(void){
     intitiaze_monitor_fd_and_client_pid_set(MAX_CLIENTS);
     add_to_monitored_fd_set(0, MAX_CLIENTS);
 
-	int connection_socket, data_socket, ret; //crete socket
+	int data_socket, ret; //crete socket
   OPCODE op_code;
 	struct sockaddr_un name;
 	unlink(SOCKET_NAME);

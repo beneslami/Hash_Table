@@ -18,14 +18,16 @@ int disconnect = 1; // indicates to server that client wants to disconnect
 table_t *table;
 
 void signal_handler(int signal_num) {
-    if (signal_num == SIGINT) {
+    if (signal_num == SIGINT){
+        loop = 0;
         write(data_socket, &disconnect, sizeof(int));
         close(data_socket);
         flush(table);
         exit(0);
     }
     else if (signal_num == SIGUSR1) {
-        exit(0);
+        flush(table);
+        table = init();
     }
 }
 
